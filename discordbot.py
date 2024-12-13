@@ -15,6 +15,7 @@ class Client(discord.Client):
         self.counting_channel_id = counting_channel_id
         self.counting_channel_chat_id = counting_channel_chat_id
         self.next_expected_number = None
+        self.last_sender = None
 
     async def on_ready(self):
         print(f"Logged in as {self.user}")
@@ -30,6 +31,8 @@ class Client(discord.Client):
 
             self.seen_numbers.add(number)
 
+        async for message in counting_channel.history(limit=1):
+            self.last_sender = message.author
 
         expected_numbers = set(range(1, max(self.seen_numbers) + 1))
 
@@ -37,7 +40,7 @@ class Client(discord.Client):
 
         self.next_expected_number = max(self.seen_numbers) + 1
 
-        print("CURRENT NUMBER: ", self.next_expected_number)
+        print(f"CURRENT NUMBER: { self.next_expected_number}, LAST SENDER {self.last_sender}")
 
     async def on_message(self, message: discord.Message) -> None:
         if message.author == self.user:
@@ -65,6 +68,10 @@ class Client(discord.Client):
                 await counting_channel_chat.send("https://tenor.com/view/give-a-damn-cat-damn-do-i-give-a-damn-do-i-give-a-damn-cat-gif-25163635")
                 await message.delete()
                 return
+
+            if message.author == self.last_sender:
+                await counting_channel_chat.send(f"{sender_name.upper()} YOU COUNTED AN EXTRA TIME SO IT DOESNT COUNT")
+                await message.delete()
 
             if number in self.seen_numbers:
                 await counting_channel_chat.send(f"{sender_name.upper()} POSTED A DUPLICATE {number}. LAUGH AT THEM")

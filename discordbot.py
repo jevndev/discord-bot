@@ -46,9 +46,10 @@ class Client(discord.Client):
         if message.author == self.user:
             return
 
-        print(f"New message from {message.author}: {message.channel.id}")
 
         if message.channel.id == self.counting_channel_id:
+            print("===============================================")
+            print(f"Author: {message.author} | Expected: {self.next_expected_number:<15}")
             guild_name = message.guild
             assert guild_name is not None
 
@@ -69,11 +70,13 @@ class Client(discord.Client):
                 await message.delete()
                 return
 
+            print(f"Rx'd {number:<20}")
+
             if message.author == self.last_sender:
                 await counting_channel_chat.send(f"{sender_name.upper()} YOU COUNTED AN EXTRA TIME SO IT DOESNT COUNT")
                 await message.delete()
 
-            if number in self.seen_numbers:
+            elif number in self.seen_numbers:
                 await counting_channel_chat.send(f"{sender_name.upper()} POSTED A DUPLICATE {number}. LAUGH AT THEM")
 
                 try:
@@ -93,11 +96,6 @@ class Client(discord.Client):
                 self.last_sender = message.author
                 self.seen_numbers.add(number)
                 self.next_expected_number += 1
-
-            self.seen_numbers.add(number)
-
-
-
 
 
 def main():

@@ -66,6 +66,8 @@ class Client(discord.Client):
 
             try:
                 number = int(message.content)
+                if message.content.startswith("+"):
+                    raise ValueError()
             except ValueError:
                 print("Not a number")
                 await counting_channel_chat.send(f"{sender_name}... you stupid idiot, learn how to fucking count, dumb piece of shit. That isn't even a number...")

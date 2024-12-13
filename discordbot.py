@@ -14,7 +14,7 @@ class Client(discord.Client):
 
         self.counting_channel_id = counting_channel_id
         self.counting_channel_chat_id = counting_channel_chat_id
-
+        self.next_expected_number = None
 
     async def on_ready(self):
         print(f"Logged in as {self.user}")
@@ -30,7 +30,14 @@ class Client(discord.Client):
 
             self.seen_numbers.add(number)
 
-        print("SEEN messages: ", self.seen_numbers)
+
+        expected_numbers = set(range(1, max(self.seen_numbers) + 1))
+
+        assert (expected_numbers == self.seen_numbers) or (len(self.seen_numbers) == 0), "COUNTING CHANNEL IS FUCKED"
+
+        self.next_expected_number = max(self.seen_numbers) + 1
+
+        print("CURRENT NUMBER: ", self.next_expected_number)
 
     async def on_message(self, message: discord.Message) -> None:
         if message.author == self.user:
@@ -54,7 +61,7 @@ class Client(discord.Client):
             try:
                 number = int(message.content)
             except ValueError:
-                await counting_channel_chat.send(f"{sender_name}... you stupid idiot, learn how to fucking count, dumb piece of shit...")
+                await counting_channel_chat.send(f"{sender_name}... you stupid idiot, learn how to fucking count, dumb piece of shit. That isn't even a number...")
                 await counting_channel_chat.send("https://tenor.com/view/give-a-damn-cat-damn-do-i-give-a-damn-do-i-give-a-damn-cat-gif-25163635")
                 await message.delete()
                 return
@@ -66,6 +73,17 @@ class Client(discord.Client):
                     await message.delete()
                 except discord.errors.Forbidden:
                     print("Could not delete message")
+
+            elif number != self.next_expected_number:
+                await counting_channel_chat.send(f"{sender_name.upper()} DOESNT KNOW HOW TO COUNT")
+
+                try:
+                    await message.delete()
+                except discord.errors.Forbidden:
+                    print("Could not delete message")
+            else:
+                assert self.next_expected_number
+                self.next_expected_number += 1
 
             self.seen_numbers.add(number)
 

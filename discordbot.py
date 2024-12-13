@@ -46,6 +46,8 @@ class Client(discord.Client):
         if message.author == self.user:
             return
 
+        if self.last_sender is None:
+            return
 
         if message.channel.id == self.counting_channel_id:
             print("===============================================")

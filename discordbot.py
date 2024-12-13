@@ -49,7 +49,7 @@ class Client(discord.Client):
 
         if message.channel.id == self.counting_channel_id:
             print("===============================================")
-            print(f"Author: {message.author} | Expected: {self.next_expected_number:<15}")
+            print(f"Author: {message.author.name:<30} | Expected: {self.next_expected_number:<15} | Last Sender: {self.last_sender.name:<30}")
             guild_name = message.guild
             assert guild_name is not None
 
@@ -65,6 +65,7 @@ class Client(discord.Client):
             try:
                 number = int(message.content)
             except ValueError:
+                print("Not a number")
                 await counting_channel_chat.send(f"{sender_name}... you stupid idiot, learn how to fucking count, dumb piece of shit. That isn't even a number...")
                 await counting_channel_chat.send("https://tenor.com/view/give-a-damn-cat-damn-do-i-give-a-damn-do-i-give-a-damn-cat-gif-25163635")
                 await message.delete()
@@ -73,10 +74,12 @@ class Client(discord.Client):
             print(f"Rx'd {number:<20}")
 
             if message.author == self.last_sender:
+                print("Duplicate Sender")
                 await counting_channel_chat.send(f"{sender_name.upper()} YOU COUNTED AN EXTRA TIME SO IT DOESNT COUNT")
                 await message.delete()
 
             elif number in self.seen_numbers:
+                print("Duplicate Number")
                 await counting_channel_chat.send(f"{sender_name.upper()} POSTED A DUPLICATE {number}. LAUGH AT THEM")
 
                 try:
@@ -85,6 +88,7 @@ class Client(discord.Client):
                     print("Could not delete message")
 
             elif number != self.next_expected_number:
+                print("Wrong Number")
                 await counting_channel_chat.send(f"{sender_name.upper()} DOESNT KNOW HOW TO COUNT")
 
                 try:
@@ -92,6 +96,7 @@ class Client(discord.Client):
                 except discord.errors.Forbidden:
                     print("Could not delete message")
             else:
+                print("Correct Number")
                 assert self.next_expected_number
                 self.last_sender = message.author
                 self.seen_numbers.add(number)

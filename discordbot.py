@@ -90,6 +90,8 @@ class Client(discord.Client):
                     print("Could not delete message")
             else:
                 assert self.next_expected_number
+                self.last_sender = message.author
+                self.seen_numbers.add(number)
                 self.next_expected_number += 1
 
             self.seen_numbers.add(number)

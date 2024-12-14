@@ -94,7 +94,7 @@ class Client(discord.Client):
             return
 
         if message.channel == self._counting_channel_chat:
-            if message.content == "!reset":
+            if message.content == "!reset-bot":
                 self._initialized = False
                 await self._counting_channel_chat.send(
                     "Oop I must have messed up. Give me a second to reset. Please don't count while I'm doing this 🥺."

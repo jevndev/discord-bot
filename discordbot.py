@@ -8,6 +8,13 @@ COUNTING_CHANNEL_ENV = "COUNTING_CHANNEL"
 COUNTING_CHANNEL_CHAT_ENV = "COUNTING_CHANNEL_CHAT"
 
 
+RESETTING_FAILURE_MESSAGES = [
+    "What did I say? You kept counting while I was working. Now I have to restart.",
+    "Oh my god. Dude. Please. Restarting again.",
+    "COME ON. STOP.",
+]
+
+
 class Client(discord.Client):
     def __init__(
         self,
@@ -37,6 +44,7 @@ class Client(discord.Client):
         )
 
         await self._reset()
+        self._initialized = True
 
     async def _reset(self):
         async for message in self._counting_channel.history(limit=None):
@@ -62,6 +70,12 @@ class Client(discord.Client):
             f"CURRENT NUMBER: { self._next_expected_number}, LAST SENDER {self._last_sender}"
         )
 
+    async def _get_last_message(
+        self, channel: discord.TextChannel
+    ) -> discord.Message | None:
+        async for message in channel.history(limit=1):
+            return message
+
     async def _get_text_channel_or_assert(
         self, channel_id: int
     ) -> discord.TextChannel | typing.NoReturn:
@@ -75,6 +89,50 @@ class Client(discord.Client):
 
         if self._last_sender is None:
             return
+
+        if not self._initialized:
+            return
+
+        if message.channel == self._counting_channel_chat:
+            if message.content == "!reset":
+                self._initialized = False
+                await self._counting_channel_chat.send(
+                    "Oop I must have messed up. Give me a second to reset. Please don't count while I'm doing this 🥺."
+                )
+                print("Resetting")
+                for _, failure_message in enumerate(RESETTING_FAILURE_MESSAGES):
+                    last_message = await self._get_last_message(self._counting_channel)
+
+                    if last_message is not None:
+                        print(f"Last Message: {last_message.id}")
+                    await self._reset()
+
+                    new_last_message = await self._get_last_message(
+                        self._counting_channel
+                    )
+
+                    if new_last_message is not None:
+                        print(f"New Last Message: {new_last_message.id}")
+
+                    if (
+                        last_message is not None
+                        and new_last_message is not None
+                        and last_message.id == new_last_message.id
+                    ):
+                        await self._counting_channel_chat.send(
+                            "You can count again now!"
+                        )
+                        self._initialized = True
+                        return
+
+                    await self._counting_channel_chat.send(failure_message)
+
+                await self._counting_channel_chat.send(
+                    "Oh my god I'm done trying. Shutting down"
+                )
+
+                await self.close()
+                return
 
         if message.channel.id == self._counting_channel_id:
             print("===============================================")

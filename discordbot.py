@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import typing
 import discord
 import os
 
@@ -27,13 +28,13 @@ class Client(discord.Client):
     async def on_ready(self):
         print(f"Logged in as {self.user}")
 
-        counting_channel = self.get_channel(self._counting_channel_id)
-        assert isinstance(counting_channel, discord.TextChannel)
-        self._counting_channel = counting_channel
+        self._counting_channel = await self._get_text_channel_or_assert(
+            self._counting_channel_id
+        )
 
-        counting_channel_chat = self.get_channel(self._counting_channel_id)
-        assert isinstance(counting_channel_chat, discord.TextChannel)
-        self._counting_channel_chat = counting_channel_chat
+        self._counting_channel_chat = await self._get_text_channel_or_assert(
+            self._counting_channel_chat_id
+        )
 
         await self._reset()
 
@@ -60,6 +61,13 @@ class Client(discord.Client):
         print(
             f"CURRENT NUMBER: { self._next_expected_number}, LAST SENDER {self._last_sender}"
         )
+
+    async def _get_text_channel_or_assert(
+        self, channel_id: int
+    ) -> discord.TextChannel | typing.NoReturn:
+        channel = self.get_channel(channel_id)
+        assert isinstance(channel, discord.TextChannel)
+        return channel
 
     async def on_message(self, message: discord.Message) -> None:
         if message.author == self.user:

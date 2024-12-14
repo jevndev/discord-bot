@@ -10,18 +10,18 @@ class Client(discord.Client):
     def __init__(self, counting_channel_id: int, counting_channel_chat_id: int,  *, intents: discord.Intents):
         super().__init__(intents=intents)
         self.locked = False
-        self.seen_numbers: set[int] = set()
+        self._seen_numbers: set[int] = set()
 
-        self.counting_channel_id = counting_channel_id
-        self.counting_channel_chat_id = counting_channel_chat_id
-        self.next_expected_number = None
-        self.last_sender = None
+        self._counting_channel_id = counting_channel_id
+        self._counting_channel_chat_id = counting_channel_chat_id
+        self._next_expected_number = None
+        self._last_sender = None
 
     async def on_ready(self):
         print(f"Logged in as {self.user}")
 
         # load all numbers already seen in counting channel
-        counting_channel = self.get_channel(self.counting_channel_id)
+        counting_channel = self.get_channel(self._counting_channel_id)
         assert isinstance(counting_channel, discord.TextChannel)
         async for message in counting_channel.history(limit=None):
             try:
@@ -29,33 +29,33 @@ class Client(discord.Client):
             except ValueError:
                 continue
 
-            self.seen_numbers.add(number)
+            self._seen_numbers.add(number)
 
         async for message in counting_channel.history(limit=1):
-            self.last_sender = message.author
+            self._last_sender = message.author
 
-        expected_numbers = set(range(1, max(self.seen_numbers) + 1))
+        expected_numbers = set(range(1, max(self._seen_numbers) + 1))
 
-        assert (expected_numbers == self.seen_numbers) or (len(self.seen_numbers) == 0), "COUNTING CHANNEL IS FUCKED"
+        assert (expected_numbers == self._seen_numbers) or (len(self._seen_numbers) == 0), "COUNTING CHANNEL IS FUCKED"
 
-        self.next_expected_number = max(self.seen_numbers) + 1
+        self._next_expected_number = max(self._seen_numbers) + 1
 
-        print(f"CURRENT NUMBER: { self.next_expected_number}, LAST SENDER {self.last_sender}")
+        print(f"CURRENT NUMBER: { self._next_expected_number}, LAST SENDER {self._last_sender}")
 
     async def on_message(self, message: discord.Message) -> None:
         if message.author == self.user:
             return
 
-        if self.last_sender is None:
+        if self._last_sender is None:
             return
 
-        if message.channel.id == self.counting_channel_id:
+        if message.channel.id == self._counting_channel_id:
             print("===============================================")
-            print(f"Author: {message.author.name:<30} | Expected: {self.next_expected_number:<15} | Last Sender: {self.last_sender.name:<30}")
+            print(f"Author: {message.author.name:<30} | Expected: {self._next_expected_number:<15} | Last Sender: {self._last_sender.name:<30}")
             guild_name = message.guild
             assert guild_name is not None
 
-            counting_channel_chat = self.get_channel(self.counting_channel_chat_id)
+            counting_channel_chat = self.get_channel(self._counting_channel_chat_id)
 
             assert isinstance(counting_channel_chat, discord.TextChannel)
 
@@ -77,12 +77,12 @@ class Client(discord.Client):
 
             print(f"Rx'd {number:<20}")
 
-            if message.author == self.last_sender:
+            if message.author == self._last_sender:
                 print("Duplicate Sender")
                 await counting_channel_chat.send(f"{sender_name.upper()} YOU COUNTED AN EXTRA TIME SO IT DOESNT COUNT")
                 await message.delete()
 
-            elif number in self.seen_numbers:
+            elif number in self._seen_numbers:
                 print("Duplicate Number")
                 await counting_channel_chat.send(f"{sender_name.upper()} POSTED A DUPLICATE {number}. LAUGH AT THEM")
 
@@ -91,7 +91,7 @@ class Client(discord.Client):
                 except discord.errors.Forbidden:
                     print("Could not delete message")
 
-            elif number != self.next_expected_number:
+            elif number != self._next_expected_number:
                 print("Wrong Number")
                 await counting_channel_chat.send(f"{sender_name.upper()} DOESNT KNOW HOW TO COUNT")
 
@@ -101,10 +101,10 @@ class Client(discord.Client):
                     print("Could not delete message")
             else:
                 print("Correct Number")
-                assert self.next_expected_number
-                self.last_sender = message.author
-                self.seen_numbers.add(number)
-                self.next_expected_number += 1
+                assert self._next_expected_number
+                self._last_sender = message.author
+                self._seen_numbers.add(number)
+                self._next_expected_number += 1
 
 
 def main():

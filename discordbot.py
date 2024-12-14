@@ -6,8 +6,15 @@ DISCORD_TOKEN_ENV = "DISCORD_TOKEN"
 COUNTING_CHANNEL_ENV = "COUNTING_CHANNEL"
 COUNTING_CHANNEL_CHAT_ENV = "COUNTING_CHANNEL_CHAT"
 
+
 class Client(discord.Client):
-    def __init__(self, counting_channel_id: int, counting_channel_chat_id: int,  *, intents: discord.Intents):
+    def __init__(
+        self,
+        counting_channel_id: int,
+        counting_channel_chat_id: int,
+        *,
+        intents: discord.Intents,
+    ):
         super().__init__(intents=intents)
         self.locked = False
         self._seen_numbers: set[int] = set()
@@ -36,11 +43,15 @@ class Client(discord.Client):
 
         expected_numbers = set(range(1, max(self._seen_numbers) + 1))
 
-        assert (expected_numbers == self._seen_numbers) or (len(self._seen_numbers) == 0), "COUNTING CHANNEL IS FUCKED"
+        assert (expected_numbers == self._seen_numbers) or (
+            len(self._seen_numbers) == 0
+        ), "COUNTING CHANNEL IS FUCKED"
 
         self._next_expected_number = max(self._seen_numbers) + 1
 
-        print(f"CURRENT NUMBER: { self._next_expected_number}, LAST SENDER {self._last_sender}")
+        print(
+            f"CURRENT NUMBER: { self._next_expected_number}, LAST SENDER {self._last_sender}"
+        )
 
     async def on_message(self, message: discord.Message) -> None:
         if message.author == self.user:
@@ -51,7 +62,9 @@ class Client(discord.Client):
 
         if message.channel.id == self._counting_channel_id:
             print("===============================================")
-            print(f"Author: {message.author.name:<30} | Expected: {self._next_expected_number:<15} | Last Sender: {self._last_sender.name:<30}")
+            print(
+                f"Author: {message.author.name:<30} | Expected: {self._next_expected_number:<15} | Last Sender: {self._last_sender.name:<30}"
+            )
             guild_name = message.guild
             assert guild_name is not None
 
@@ -70,8 +83,12 @@ class Client(discord.Client):
                     raise ValueError()
             except ValueError:
                 print("Not a number")
-                await counting_channel_chat.send(f"{sender_name}... you stupid idiot, learn how to fucking count, dumb piece of shit. That isn't even a number...")
-                await counting_channel_chat.send("https://tenor.com/view/give-a-damn-cat-damn-do-i-give-a-damn-do-i-give-a-damn-cat-gif-25163635")
+                await counting_channel_chat.send(
+                    f"{sender_name}... you stupid idiot, learn how to fucking count, dumb piece of shit. That isn't even a number..."
+                )
+                await counting_channel_chat.send(
+                    "https://tenor.com/view/give-a-damn-cat-damn-do-i-give-a-damn-do-i-give-a-damn-cat-gif-25163635"
+                )
                 await message.delete()
                 return
 
@@ -79,12 +96,16 @@ class Client(discord.Client):
 
             if message.author == self._last_sender:
                 print("Duplicate Sender")
-                await counting_channel_chat.send(f"{sender_name.upper()} YOU COUNTED AN EXTRA TIME SO IT DOESNT COUNT")
+                await counting_channel_chat.send(
+                    f"{sender_name.upper()} YOU COUNTED AN EXTRA TIME SO IT DOESNT COUNT"
+                )
                 await message.delete()
 
             elif number in self._seen_numbers:
                 print("Duplicate Number")
-                await counting_channel_chat.send(f"{sender_name.upper()} POSTED A DUPLICATE {number}. LAUGH AT THEM")
+                await counting_channel_chat.send(
+                    f"{sender_name.upper()} POSTED A DUPLICATE {number}. LAUGH AT THEM"
+                )
 
                 try:
                     await message.delete()
@@ -93,7 +114,9 @@ class Client(discord.Client):
 
             elif number != self._next_expected_number:
                 print("Wrong Number")
-                await counting_channel_chat.send(f"{sender_name.upper()} DOESNT KNOW HOW TO COUNT")
+                await counting_channel_chat.send(
+                    f"{sender_name.upper()} DOESNT KNOW HOW TO COUNT"
+                )
 
                 try:
                     await message.delete()
@@ -127,6 +150,7 @@ def main():
     intents.message_content = True
     client = Client(counting_channel_id, counting_channel_chat_id, intents=intents)
     client.run(DISCORD_TOKEN)
+
 
 if __name__ == "__main__":
     main()

@@ -27,10 +27,18 @@ class Client(discord.Client):
     async def on_ready(self):
         print(f"Logged in as {self.user}")
 
-        # load all numbers already seen in counting channel
         counting_channel = self.get_channel(self._counting_channel_id)
         assert isinstance(counting_channel, discord.TextChannel)
-        async for message in counting_channel.history(limit=None):
+        self._counting_channel = counting_channel
+
+        counting_channel_chat = self.get_channel(self._counting_channel_id)
+        assert isinstance(counting_channel_chat, discord.TextChannel)
+        self._counting_channel_chat = counting_channel_chat
+
+        await self._reset()
+
+    async def _reset(self):
+        async for message in self._counting_channel.history(limit=None):
             try:
                 number = int(message.content)
             except ValueError:
@@ -38,7 +46,7 @@ class Client(discord.Client):
 
             self._seen_numbers.add(number)
 
-        async for message in counting_channel.history(limit=1):
+        async for message in self._counting_channel.history(limit=1):
             self._last_sender = message.author
 
         expected_numbers = set(range(1, max(self._seen_numbers) + 1))
